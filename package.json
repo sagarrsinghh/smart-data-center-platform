@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "officeparser": "^6.0.7",
+    "pptx-parser": "^1.1.7-beta.9"
+  }
+}

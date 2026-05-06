@@ -1,0 +1,106 @@
+# ============================================================
+# Smart Data Center Platform — Root .gitignore
+# ============================================================
+
+# ─── Dependencies ───────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# ─── Build Outputs ──────────────────────────────────────────
+dist/
+build/
+out/
+.next/
+.nuxt/
+.output/
+
+# ─── Environment & Secrets ──────────────────────────────────
+.env
+.env.*
+!.env.example
+*.local
+
+# ─── Logs ───────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ─── Runtime / Temp files ───────────────────────────────────
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+
+# ─── Test & Coverage ────────────────────────────────────────
+coverage/
+.nyc_output/
+*.lcov
+
+# ─── Uploads (user-generated content) ───────────────────────
+backend/uploads/
+!backend/uploads/.gitkeep
+
+# ─── Scratch / Debug files ──────────────────────────────────
+backend/db_output.json
+backend/errors.txt
+backend/errors2.txt
+backend/upload_test_result.txt
+backend/test_upload.mjs
+backend/test.xlsx
+backend/test.pptx
+extracted_data.txt
+extract_info.py
+
+# ─── Office / Data Files (local working documents) ──────────
+*.xlsx
+*.xls
+*.pptx
+*.ppt
+*.pdf
+
+# ─── Frontend Build Artifacts ───────────────────────────────
+smart-dc-frontend/dist/
+smart-dc-frontend/build-output.txt
+
+# ─── TypeScript ─────────────────────────────────────────────
+*.tsbuildinfo
+
+# ─── Editor & IDE ───────────────────────────────────────────
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ─── OS Generated ───────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# ─── Docker (if added later) ────────────────────────────────
+docker-compose.override.yml
+
+# ─── Miscellaneous ──────────────────────────────────────────
+*.pid
+*.seed
+*.pid.lock
+.cache/
+.parcel-cache/
+.turbo/
