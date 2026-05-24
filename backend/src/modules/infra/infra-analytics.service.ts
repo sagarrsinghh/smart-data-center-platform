@@ -43,6 +43,7 @@ export class InfraAnalyticsService {
         totalCpu: number;
         totalRamGb: number;
         totalVms: number;
+        coreTotal: number;
       }
     >();
     const locationTotals = new Map<
@@ -55,7 +56,10 @@ export class InfraAnalyticsService {
       }
     >();
     const environmentTotals = new Map<string, number>();
-    const workloadTotals = new Map<string, number>();
+    const workloadTotals = new Map<string, number>([
+      ['APP', 0],
+      ['DB', 0],
+    ]);
 
     deployments.forEach((deployment) => {
       const project = projectTotals.get(deployment.project.normalizedName) || {
@@ -63,6 +67,7 @@ export class InfraAnalyticsService {
         totalCpu: 0,
         totalRamGb: 0,
         totalVms: 0,
+        coreTotal: 0,
       };
 
       project.totalCpu += Number(deployment.totalCpu || 0);
@@ -70,6 +75,7 @@ export class InfraAnalyticsService {
       project.totalVms += Number(
         deployment.totalVms || deployment.vmQuantity || 0,
       );
+      project.coreTotal += Number(deployment.core || 0);
       projectTotals.set(deployment.project.normalizedName, project);
 
       const location = locationTotals.get(deployment.locationCode) || {
@@ -89,13 +95,16 @@ export class InfraAnalyticsService {
       environmentTotals.set(
         deployment.environmentType,
         (environmentTotals.get(deployment.environmentType) || 0) +
-          Number(deployment.totalCpu || 0),
+          Number(deployment.core || 0),
       );
-      workloadTotals.set(
-        deployment.workloadType,
-        (workloadTotals.get(deployment.workloadType) || 0) +
-          Number(deployment.totalCpu || 0),
-      );
+      const workloadType = deployment.workloadType?.toUpperCase();
+      if (workloadType) {
+        workloadTotals.set(
+          workloadType,
+          (workloadTotals.get(workloadType) || 0) +
+            Number(deployment.core || 0),
+        );
+      }
     });
 
     const storageByLocation = new Map<
@@ -117,11 +126,15 @@ export class InfraAnalyticsService {
 
     const topProjects = Array.from(projectTotals.values())
       .map((item) => ({
-        ...item,
+        projectName: item.projectName,
         totalCpu: Number(item.totalCpu.toFixed(2)),
         totalRamGb: Number(item.totalRamGb.toFixed(2)),
+        totalVms: item.totalVms,
+        cpuUsage: Number(
+          (item.totalCpu > 0 ? item.totalCpu : item.coreTotal).toFixed(2),
+        ),
       }))
-      .sort((left, right) => right.totalCpu - left.totalCpu)
+      .sort((left, right) => right.cpuUsage - left.cpuUsage)
       .slice(0, 10);
 
     const capacityWarnings = Array.from(storageByLocation.values())
@@ -176,15 +189,15 @@ export class InfraAnalyticsService {
         totalRamGb: Number(item.totalRamGb.toFixed(2)),
       })),
       environmentDistribution: Array.from(environmentTotals.entries()).map(
-        ([environmentType, totalCpu]) => ({
+        ([environmentType, cpuUsage]) => ({
           environmentType,
-          totalCpu: Number(totalCpu.toFixed(2)),
+          cpuUsage: Number(cpuUsage.toFixed(2)),
         }),
       ),
       workloadDistribution: Array.from(workloadTotals.entries()).map(
-        ([workloadType, totalCpu]) => ({
+        ([workloadType, cpuUsage]) => ({
           workloadType,
-          totalCpu: Number(totalCpu.toFixed(2)),
+          cpuUsage: Number(cpuUsage.toFixed(2)),
         }),
       ),
       storageUtilization: Array.from(storageByLocation.values()).map(
@@ -329,16 +342,25 @@ export class InfraAnalyticsService {
 
     const projectTotals = new Map<
       string,
-      { projectName: string; totalCpu: number; totalRamGb: number }
+      {
+        projectName: string;
+        totalCpu: number;
+        totalRamGb: number;
+        totalVms: number;
+      }
     >();
     deployments.forEach((deployment) => {
       const project = projectTotals.get(deployment.project.normalizedName) || {
         projectName: deployment.project.displayName,
         totalCpu: 0,
         totalRamGb: 0,
+        totalVms: 0,
       };
       project.totalCpu += Number(deployment.totalCpu || 0);
       project.totalRamGb += Number(deployment.totalRamGb || 0);
+      project.totalVms += Number(
+        deployment.totalVms || deployment.vmQuantity || 0,
+      );
       projectTotals.set(deployment.project.normalizedName, project);
     });
 
@@ -348,6 +370,7 @@ export class InfraAnalyticsService {
         ...p,
         totalCpu: Number(p.totalCpu.toFixed(2)),
         totalRamGb: Number(p.totalRamGb.toFixed(2)),
+        totalVms: Number(p.totalVms),
       }))
       .sort((a, b) => b.totalCpu - a.totalCpu);
 
@@ -385,10 +408,34 @@ export class InfraAnalyticsService {
       .filter((item) => item.utilizationPercent >= 80)
       .sort((a, b) => b.utilizationPercent - a.utilizationPercent);
 
+    // Advanced: Underutilized / Idle Storage Assets
+    const underutilizedAssets = assets
+      .filter((asset) => {
+        const allocated = Number(asset.allocatedCapacityTb || 0);
+        const used = Number(asset.usedCapacityTb || 0);
+        return allocated >= 5 && used / allocated < 0.15;
+      })
+      .map((asset) => {
+        const allocated = Number(asset.allocatedCapacityTb || 0);
+        const used = Number(asset.usedCapacityTb || 0);
+        const wasted = allocated - used;
+        const utilizationPercent = allocated > 0 ? (used / allocated) * 100 : 0;
+        return {
+          deviceName: asset.deviceName,
+          locationCode: asset.location.code,
+          allocatedCapacityTb: Number(allocated.toFixed(2)),
+          usedCapacityTb: Number(used.toFixed(2)),
+          wastedCapacityTb: Number(wasted.toFixed(2)),
+          utilizationPercent: Number(utilizationPercent.toFixed(2)),
+        };
+      })
+      .sort((a, b) => b.wastedCapacityTb - a.wastedCapacityTb);
+
     return {
       activeImportId: batch.id,
       highComputeProjects,
       highStorageLocations,
+      underutilizedAssets,
     };
   }
 }

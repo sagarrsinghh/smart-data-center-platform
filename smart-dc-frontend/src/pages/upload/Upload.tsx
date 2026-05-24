@@ -222,74 +222,93 @@ export default function Upload() {
         className="rounded-2xl border border-white/[0.06] p-6"
         style={{ background: "rgba(15,23,42,0.7)", backdropFilter: "blur(16px)" }}
       >
-        <div className="grid grid-cols-1 xl:grid-cols-[0.95fr_1.05fr] gap-6">
-          <div>
-            <h2 className="text-base font-semibold text-white">1. Select Data Timeframe</h2>
-            <p className="text-sm text-gray-400 mt-1 mb-4">
-              Explicitly specify the month and year this workbook represents for accurate historical trending.
-            </p>
-
-            <div className="flex gap-4 mb-6">
-              <select
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="flex-1 rounded-xl border border-white/10 bg-[#020617] px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500"
-              >
-                <option value="" disabled>Select Month</option>
-                {months.map((m) => (
-                  <option key={m.value} value={m.value}>{m.label}</option>
-                ))}
-              </select>
-
-              <select
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(e.target.value)}
-                className="flex-1 rounded-xl border border-white/10 bg-[#020617] px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500"
-              >
-                <option value="" disabled>Select Year</option>
-                {years.map((y) => (
-                  <option key={y} value={y}>{y}</option>
-                ))}
-              </select>
+        <div className="grid grid-cols-1 xl:grid-cols-[0.86fr_1.14fr] gap-6">
+          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-5">
+            <div className="mb-5">
+              <h2 className="text-base font-semibold text-white">New Snapshot</h2>
+              <p className="mt-1 text-sm text-gray-400">
+                Select a reporting period and upload the workbook to preview before activation.
+              </p>
             </div>
 
-            <h2 className="text-base font-semibold text-white">2. Preview Workbook</h2>
-            <p className="text-sm text-gray-400 mt-1 mb-4">
-              Select the Excel file to parse projects and storage capacity.
-            </p>
-
-            <input
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={(event) => void handlePreview(event.target.files?.[0] || null)}
-              className="block w-full rounded-xl border border-white/10 bg-[#020617] px-4 py-3 text-sm text-white"
-            />
-
-            {file && <p className="mt-3 text-sm text-cyan-400">{file.name}</p>}
-
-            <div className="mt-6 grid grid-cols-1 gap-3">
-              {[
-                "3. Detect required workbook sheets",
-                "4. Normalize project deployment rows",
-                "5. Parse storage location sections",
-                "6. Save versioned snapshot and activate it",
-              ].map((stage) => (
-                <div
-                  key={stage}
-                  className="rounded-xl border border-white/[0.06] px-4 py-3 bg-white/[0.02] text-sm text-gray-300"
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <label className="space-y-2">
+                <span className="text-xs font-medium uppercase tracking-widest text-gray-500">Month</span>
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  className="w-full rounded-xl border border-white/10 bg-[#020617] px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500"
                 >
-                  {stage}
+                  <option value="" disabled>Select Month</option>
+                  {months.map((m) => (
+                    <option key={m.value} value={m.value}>{m.label}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="space-y-2">
+                <span className="text-xs font-medium uppercase tracking-widest text-gray-500">Year</span>
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(e.target.value)}
+                  className="w-full rounded-xl border border-white/10 bg-[#020617] px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500"
+                >
+                  <option value="" disabled>Select Year</option>
+                  {years.map((y) => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="mt-5">
+              <p className="mb-2 text-xs font-medium uppercase tracking-widest text-gray-500">Workbook File</p>
+              <label
+                htmlFor="workbook-file"
+                className="flex min-h-[150px] cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-white/12 bg-[#020617]/70 px-5 py-6 text-center transition hover:border-cyan-400/50 hover:bg-cyan-500/[0.04]"
+              >
+                <span className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-cyan-300">
+                  Select Workbook
+                </span>
+                <span className="mt-4 text-sm font-medium text-white">
+                  {file ? file.name : "Upload an .xlsx or .xls file"}
+                </span>
+                <span className="mt-1 text-xs text-gray-500">
+                  {file ? "Preview refreshed from the selected file." : "Workbook is parsed locally before import."}
+                </span>
+              </label>
+              <input
+                id="workbook-file"
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={(event) => void handlePreview(event.target.files?.[0] || null)}
+                className="sr-only"
+              />
+            </div>
+
+            <div className="mt-5 grid grid-cols-3 gap-3">
+              {[
+                { label: "Preview", value: preview ? "Ready" : "Pending", tone: preview ? "text-emerald-300" : "text-gray-400" },
+                { label: "Warnings", value: preview?.summary.warningCount ?? "-", tone: "text-amber-300" },
+                { label: "Rows", value: preview?.summary.deploymentCount ?? "-", tone: "text-cyan-300" },
+              ].map((item) => (
+                <div key={item.label} className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-3">
+                  <p className="text-[10px] uppercase tracking-widest text-gray-500">{item.label}</p>
+                  <p className={`mt-1 text-lg font-semibold ${item.tone}`}>{item.value}</p>
                 </div>
               ))}
             </div>
 
-            <div className="flex justify-end mt-6">
+            <div className="mt-6 flex items-center justify-between gap-4">
+              <p className="text-xs text-gray-500">
+                Imports are saved as versioned snapshots and the latest import is activated after confirmation.
+              </p>
               <button
                 onClick={() => void handleImport()}
                 disabled={!file || !selectedMonth || !selectedYear || busy || !preview}
-                className="px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-white font-medium transition-colors"
+                className="shrink-0 px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-white font-medium transition-colors"
               >
-                {busy ? "Processing..." : "Import Workbook Snapshot"}
+                {busy ? "Processing..." : "Import Snapshot"}
               </button>
             </div>
             {(!selectedMonth || !selectedYear) && file && (

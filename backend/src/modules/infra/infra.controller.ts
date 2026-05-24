@@ -23,6 +23,7 @@ import { JwtGuard } from '../auth/guards/jwt.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { InfraAnalyticsService } from './infra-analytics.service';
 import { InfraImportsService } from './infra-imports.service';
+import { NotificationsService } from './notifications.service';
 import { ProjectsService } from './projects.service';
 import { StorageService } from './storage.service';
 
@@ -47,6 +48,7 @@ export class InfraController {
     private readonly projectsService: ProjectsService,
     private readonly storageService: StorageService,
     private readonly analyticsService: InfraAnalyticsService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   @Post('imports/preview')
@@ -164,5 +166,22 @@ export class InfraController {
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.VIEWER)
   alerts() {
     return this.analyticsService.alerts();
+  }
+
+  @Get('notifications')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.VIEWER)
+  async notifications(@Query('limit') limit?: string) {
+    const activeBatch = await this.importsService.getActiveBatch();
+    if (activeBatch) {
+      await this.notificationsService.syncCapacityAlerts(activeBatch);
+    }
+
+    return this.notificationsService.listLatest(Number(limit) || 12);
+  }
+
+  @Post('notifications/:id/read')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.VIEWER)
+  markNotificationRead(@Param('id', ParseIntPipe) id: number) {
+    return this.notificationsService.markRead(id);
   }
 }

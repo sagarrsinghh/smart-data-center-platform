@@ -18,3 +18,9 @@ export const getComputeTrends = () => api.get("/infra-analytics/trends/compute")
 export const getStorageTrends = () => api.get("/infra-analytics/trends/storage");
 
 export const getAlerts = () => api.get("/infra-analytics/alerts");
+
+export const getNotifications = (limit = 12) =>
+  api.get("/notifications", { params: { limit } });
+
+export const markNotificationRead = (id: number) =>
+  api.post(`/notifications/${id}/read`);

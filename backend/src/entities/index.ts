@@ -7,3 +7,4 @@ export { Project } from './project.entity';
 export { ProjectDeployment } from './project-deployment.entity';
 export { StorageAsset } from './storage-asset.entity';
 export { StorageLocation } from './storage-location.entity';
+export { Notification } from './notification.entity';

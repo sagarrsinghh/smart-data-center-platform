@@ -13,6 +13,7 @@ import { ProjectDeployment } from '../../entities/project-deployment.entity';
 import { Project } from '../../entities/project.entity';
 import { StorageAsset } from '../../entities/storage-asset.entity';
 import { StorageLocation } from '../../entities/storage-location.entity';
+import { NotificationsService } from './notifications.service';
 import { WorkbookImportParser } from './parsers/workbook-import.parser';
 
 @Injectable()
@@ -32,6 +33,7 @@ export class InfraImportsService {
     private readonly storageAssetRepo: Repository<StorageAsset>,
     @InjectRepository(ImportIssue)
     private readonly issueRepo: Repository<ImportIssue>,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   previewWorkbook(file: Express.Multer.File) {
@@ -86,6 +88,20 @@ export class InfraImportsService {
         });
 
         await this.persistIssues(batch.id, parsed.issues);
+        await this.safeNotify({
+          category: 'workbook',
+          severity: 'critical',
+          title: 'Workbook Import Failed',
+          message: `${file.originalname} failed validation during upload.`,
+          sourceType: 'workbook',
+          sourceKey: `workbook-failed:${batch.id}`,
+          batch,
+          metadata: {
+            originalFilename: file.originalname,
+            errorCount: parsed.summary.errorCount,
+            warningCount: parsed.summary.warningCount,
+          },
+        });
 
         throw new BadRequestException({
           message: 'Workbook parsing failed validation.',
@@ -219,6 +235,28 @@ export class InfraImportsService {
         });
       });
 
+      await this.safeNotify({
+        category: 'workbook',
+        severity: 'success',
+        title: activate
+          ? 'Workbook Uploaded And Activated'
+          : 'Workbook Uploaded',
+        message: `${file.originalname} imported ${parsed.summary.deploymentCount} deployment rows and ${parsed.summary.storageAssetCount} storage assets.`,
+        sourceType: 'workbook',
+        sourceKey: `workbook-uploaded:${batch.id}`,
+        batch,
+        metadata: {
+          originalFilename: file.originalname,
+          deploymentCount: parsed.summary.deploymentCount,
+          storageAssetCount: parsed.summary.storageAssetCount,
+          activated: activate,
+        },
+      });
+
+      if (activate) {
+        await this.notificationsService.syncCapacityAlerts(batch);
+      }
+
       return this.getImportDetail(batch.id);
     } catch (error) {
       if (!(error instanceof BadRequestException)) {
@@ -227,6 +265,22 @@ export class InfraImportsService {
           status: 'failed',
           errorMessage:
             error instanceof Error ? error.message : 'Workbook import failed.',
+        });
+        await this.safeNotify({
+          category: 'workbook',
+          severity: 'critical',
+          title: 'Workbook Import Failed',
+          message: `${file.originalname} could not be imported.`,
+          sourceType: 'workbook',
+          sourceKey: `workbook-failed:${batch.id}`,
+          batch,
+          metadata: {
+            originalFilename: file.originalname,
+            errorMessage:
+              error instanceof Error
+                ? error.message
+                : 'Workbook import failed.',
+          },
         });
       }
 
@@ -291,7 +345,20 @@ export class InfraImportsService {
       this.removeFile(batch.filePath);
     }
 
+    await this.notificationsService.deleteCapacityAlertsForBatch(id);
     await this.batchRepo.delete({ id });
+    await this.safeNotify({
+      category: 'workbook',
+      severity: 'info',
+      title: 'Workbook Deleted',
+      message: `${batch.originalFilename} was deleted from import history.`,
+      sourceType: 'workbook',
+      sourceKey: `workbook-deleted:${id}`,
+      metadata: {
+        importBatchId: id,
+        originalFilename: batch.originalFilename,
+      },
+    });
 
     return { message: 'Import batch deleted successfully.', id };
   }
@@ -372,6 +439,16 @@ export class InfraImportsService {
   private removeFile(filePath: string) {
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
+    }
+  }
+
+  private async safeNotify(
+    input: Parameters<NotificationsService['create']>[0],
+  ) {
+    try {
+      await this.notificationsService.create(input);
+    } catch {
+      // Notification persistence should not block workbook operations.
     }
   }
 }
