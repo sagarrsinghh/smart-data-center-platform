@@ -86,28 +86,19 @@ function SummaryCard({
   value,
   subtitle,
   colors,
-  icon,
 }: {
   title: string;
   value: string;
   subtitle: string;
   colors: string;
-  icon: ReactNode;
 }) {
   return (
     <div
       className={`rounded-[18px] border border-white/10 px-5 py-4 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] ${colors}`}
     >
-      <div className="flex items-center gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/12">
-          {icon}
-        </div>
-        <div>
-          <p className="text-xs font-medium uppercase tracking-[0.14em] text-white/75">{title}</p>
-          <p className="mt-1 text-3xl font-semibold leading-none">{value}</p>
-          <p className="mt-1 text-sm text-white/80">{subtitle}</p>
-        </div>
-      </div>
+      <p className="text-xs font-medium uppercase tracking-[0.14em] text-white/75">{title}</p>
+      <p className="mt-1 text-3xl font-semibold leading-none">{value}</p>
+      <p className="mt-1 text-sm text-white/80">{subtitle}</p>
     </div>
   );
 }
@@ -568,35 +559,30 @@ export default function Dashboard() {
             value={String(totals.projects || 0)}
             subtitle={`${totals.deployments || 0} deployment rows`}
             colors="bg-[linear-gradient(135deg,#8a2338,#cb4c5d)]"
-            icon={<span className="text-2xl">#</span>}
           />
           <SummaryCard
             title="Total CPU"
             value={`${Number(totals.totalCpu || 0).toFixed(0)}`}
             subtitle={`${totals.totalVms || 0} VMs across the active snapshot`}
             colors="bg-[linear-gradient(135deg,#bb6a22,#f0a144)]"
-            icon={<span className="text-2xl">~</span>}
           />
           <SummaryCard
             title="Total VMs"
             value={`${Number(totals.totalVms || 0).toFixed(0)}`}
             subtitle="VMs across active snapshot"
             colors="bg-[linear-gradient(135deg,#4b327d,#8064d8)]"
-            icon={<span className="text-2xl">VM</span>}
           />
           <SummaryCard
             title="Total RAM"
             value={`${Number(totals.totalRamGb || 0).toFixed(0)} GB`}
             subtitle="Workbook-wide allocated memory"
             colors="bg-[linear-gradient(135deg,#2354a5,#3c79d8)]"
-            icon={<span className="text-2xl">+</span>}
           />
           <SummaryCard
             title="Storage Used"
             value={`${Number(totals.usedStorageTb || 0).toFixed(1)} TB`}
             subtitle={`${Number(totals.totalStorageTb || 0).toFixed(1)} TB total capacity`}
             colors="bg-[linear-gradient(135deg,#2d7f52,#52a96a)]"
-            icon={<span className="text-2xl">✓</span>}
           />
         </div>
 
@@ -696,18 +682,77 @@ export default function Dashboard() {
         <div className="grid gap-5 xl:grid-cols-[0.95fr_1.45fr]">
           <Panel title="Location Distribution">
             <div className="space-y-3">
-              {(dashboard.locationDistribution || []).map((location: any) => (
-                <div key={location.locationCode} className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-slate-100">{location.locationCode}</p>
-                    <p className="text-xs text-slate-500">{location.totalVms} VMs</p>
+              {(dashboard.locationDistribution || []).map((location: any) => {
+                const code = location.locationCode;
+                let themeColor = "border-l-indigo-400";
+                let glowColor = "rgba(129,140,248,0.1)";
+                let badgeText = "text-indigo-400 bg-indigo-500/10";
+                
+                if (code === "P4") {
+                  themeColor = "border-l-cyan-400";
+                  glowColor = "rgba(34,211,238,0.12)";
+                  badgeText = "text-cyan-400 bg-cyan-500/10";
+                } else if (code === "DR") {
+                  themeColor = "border-l-purple-400";
+                  glowColor = "rgba(192,132,252,0.12)";
+                  badgeText = "text-purple-400 bg-purple-500/10";
+                } else if (code === "P1") {
+                  themeColor = "border-l-emerald-400";
+                  glowColor = "rgba(74,222,128,0.12)";
+                  badgeText = "text-emerald-400 bg-emerald-500/10";
+                } else if (code === "P3") {
+                  themeColor = "border-l-amber-400";
+                  glowColor = "rgba(251,191,36,0.12)";
+                  badgeText = "text-amber-400 bg-amber-500/10";
+                }
+
+                const ramTb = Number(location.totalRamGb || 0) / 1024;
+                const ramDisplay = ramTb >= 1 ? `${ramTb.toFixed(1)} TB` : `${Number(location.totalRamGb || 0).toFixed(0)} GB`;
+
+                return (
+                  <div
+                    key={code}
+                    className={`rounded-2xl border border-white/8 bg-white/[0.025] pl-4 pr-5 py-3.5 transition-all duration-300 hover:border-white/15 hover:-translate-y-0.5 flex flex-col gap-2.5 border-l-4 ${themeColor}`}
+                    style={{
+                      boxShadow: `0 4px 16px ${glowColor}`,
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-current" style={{ color: code === "P4" ? "#22d3ee" : code === "DR" ? "#c084fc" : code === "P1" ? "#4ade80" : "#fbbf24" }} />
+                        <span className="text-sm font-bold tracking-tight text-white">{code} Data Center</span>
+                      </div>
+                      <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold uppercase tracking-wide border border-current ${badgeText}`}>
+                        {location.totalVms} VMs
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 text-xs">
+                      {/* CPU cores */}
+                      <div className="flex items-center gap-2 text-slate-400 bg-slate-950/40 p-2 rounded-xl border border-white/5">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-3.5 h-3.5 text-cyan-400">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 3v1.5M4.5 8.25H3m10.5-5.25v1.5M3 12h1.5m15-3.75H18M3 15.75h1.5m15-3.75H18m0 4.5h1.5M12 18.75v1.5m-3.75-1.5v1.5m7.5-1.5v1.5M3.75 6h16.5a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5H3.75A1.5 1.5 0 0 1 2.25 16.5v-9A1.5 1.5 0 0 1 3.75 6Z" />
+                        </svg>
+                        <div>
+                          <p className="text-[9px] text-slate-500 font-semibold uppercase leading-none">CPU Cores</p>
+                          <p className="text-xs font-extrabold text-cyan-400 mt-1">{Number(location.totalCpu || 0).toLocaleString()} Cores</p>
+                        </div>
+                      </div>
+
+                      {/* RAM Memory */}
+                      <div className="flex items-center gap-2 text-slate-400 bg-slate-950/40 p-2 rounded-xl border border-white/5">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-3.5 h-3.5 text-purple-400">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 8.25h12M6 12h12m-12 3.75h12M19.5 4.5v15a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5v-15a2.25 2.25 0 0 1 2.25-2.25h10.5A2.25 2.25 0 0 1 19.5 4.5Z" />
+                        </svg>
+                        <div>
+                          <p className="text-[9px] text-slate-500 font-semibold uppercase leading-none">RAM Memory</p>
+                          <p className="text-xs font-extrabold text-purple-400 mt-1">{ramDisplay}</p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-slate-400">
-                    <span>CPU {Number(location.totalCpu || 0).toFixed(0)}</span>
-                    <span>RAM {Number(location.totalRamGb || 0).toFixed(0)} GB</span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </Panel>
 

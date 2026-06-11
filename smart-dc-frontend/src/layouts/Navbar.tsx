@@ -50,13 +50,13 @@ export default function Navbar({
           <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{roleLabel}</p>
         </div>
 
-	        <button
-	          onClick={() => navigate("/profile")}
-	          className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-[linear-gradient(135deg,#2b4676,#172846)] text-sm font-semibold text-cyan-100 transition hover:scale-[1.02]"
-	          title="Open profile"
-	        >
-	          {firstName.slice(0, 2).toUpperCase()}
-	        </button>
+        <button
+          onClick={() => navigate("/profile")}
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-[linear-gradient(135deg,#2b4676,#172846)] text-sm font-semibold text-cyan-100 transition hover:scale-[1.02]"
+          title="Open profile"
+        >
+          {firstName.slice(0, 2).toUpperCase()}
+        </button>
 
         <button
           onClick={() => {

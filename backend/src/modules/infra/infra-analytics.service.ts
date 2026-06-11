@@ -85,11 +85,9 @@ export class InfraAnalyticsService {
         totalVms: 0,
       };
 
-      location.totalCpu += Number(deployment.totalCpu || 0);
-      location.totalRamGb += Number(deployment.totalRamGb || 0);
-      location.totalVms += Number(
-        deployment.totalVms || deployment.vmQuantity || 0,
-      );
+      location.totalCpu += Number(deployment.core || 0);
+      location.totalRamGb += Number(deployment.ramGb || 0);
+      location.totalVms += Number(deployment.vmQuantity || 0);
       locationTotals.set(deployment.locationCode, location);
 
       environmentTotals.set(

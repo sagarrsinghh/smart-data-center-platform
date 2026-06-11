@@ -176,16 +176,14 @@ export default function Sidebar({
     >
       <div className={`mb-8 flex items-center ${expanded ? "justify-between gap-3" : "justify-center"}`}>
         <div className={`flex items-center ${expanded ? "gap-3" : ""}`}>
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(180deg,#3f73ff,#3155c6)] shadow-[0_10px_25px_rgba(50,92,205,0.45)]">
-            <svg viewBox="0 0 24 24" className="h-6 w-6 text-white" fill="none" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4.5 15.75h15M6.75 15.75V9.75m4.5 6V6.75m4.5 9V11.25m4.5 4.5V8.25M3 19.5h18" />
-            </svg>
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-950 border border-white/10 shadow-[0_8px_20px_rgba(6,182,212,0.25)] overflow-hidden">
+            <img src="/logo.png" alt="Smart DC Logo" className="h-full w-full object-cover" />
           </div>
 
           {expanded && (
             <div>
               <p className="text-[11px] uppercase tracking-[0.26em] text-slate-500">Smart DC</p>
-              <h2 className="mt-1 text-lg font-semibold text-white">Monitoring Suite</h2>
+              <h2 className="mt-1 text-base font-bold text-white tracking-tight">Monitoring Suite</h2>
             </div>
           )}
         </div>
